@@ -99,10 +99,26 @@ function parsePath(path) {
 // 实例化一个watcher,触发get方法->getter方法获取状态数据->触发reactive data的getter,向dep中添加依赖window.target
 // 当reactive data的状态变化,触发setter -> dep的notify -> watcher的update -> 回调被调用
 
+const arrayProto = Array.prototype;
+const arrayMethods = Object.create(arrayProto);;
+
+['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse'].forEach(function (method) {
+	const originalMethod = arrayProto[method];
+	Object.defineProperty(arrayMethods, method, {
+		value: function mutator(...param) {
+			console.log(this);
+			return originalMethod.apply(this, param)
+		},
+		enumerable: false,
+		writable: true,
+		configurable: true
+	})
+})
 class Observer {
 	constructor(value) {
 		this.value = value;
-		if(!Array.isArray(value)) this.walk(value)
+		if(Array.isArray(value)) value.__proto__ = arrayMethods; 
+		else this.walk(value)
 	}
 
 	walk(obj) {
@@ -110,3 +126,8 @@ class Observer {
 		for(let i = 0; i < keys.length; i++) defineReactive(obj, keys[i], obj[keys[i]]);
 	}
 }
+
+// data通过observer转换成getter/setter的形式追踪变化.
+// 外界通过watcher读取数据时,会触发getter将watcher添加到数据的依赖中
+// 数据发生变化,触发setter,进而触发dep的notify, 进而触发watcher的update方法,
+// 通过update方法触发响应的回调 或更新视图.

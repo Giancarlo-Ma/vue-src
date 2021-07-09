@@ -114,10 +114,34 @@ const arrayMethods = Object.create(arrayProto);;
 		configurable: true
 	})
 })
+
+function def (obj, key, val, enumerable) {
+  Object.defineProperty(obj, key, {
+    value: val,
+    enumerable: !!enumerable,
+    writable: true,
+    configurable: true
+  })
+}
+
+const hasProto = '__proto__' in {};
+const arrayKeys = Object.getOwnPropertyNames(arrayMethods);
+function protoAugment(target, src) {
+	target.__proto__ = src;
+}
+function copyArgument(target, src, keys) {
+	for(let i = 0; i < target.length; i++) {
+		const key = keys[i];
+		def(target, key, src[key])
+	}
+}
 class Observer {
 	constructor(value) {
 		this.value = value;
-		if(Array.isArray(value)) value.__proto__ = arrayMethods; 
+		if(Array.isArray(value)) {
+			const augment = hasProto ? protoAugment : copyArgument;
+			augment(value, arrayMethods, arrayKeys);
+		}
 		else this.walk(value)
 	}
 

@@ -1,4 +1,7 @@
 function defineReactive(data, key, val) {
+	if(typeof val === 'object') {
+		new Observer(val);
+	}
 	let dep = new Dep();
 	Object.defineProperty(data, key, {
 		enumerable: true,
@@ -96,3 +99,14 @@ function parsePath(path) {
 // 实例化一个watcher,触发get方法->getter方法获取状态数据->触发reactive data的getter,向dep中添加依赖window.target
 // 当reactive data的状态变化,触发setter -> dep的notify -> watcher的update -> 回调被调用
 
+class Observer {
+	constructor(value) {
+		this.value = value;
+		if(!Array.isArray(value)) this.walk(value)
+	}
+
+	walk(obj) {
+		const keys = Object.keys(obj);
+		for(let i = 0; i < keys.length; i++) defineReactive(obj, keys[i], obj[keys[i]]);
+	}
+}
